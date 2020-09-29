@@ -2,9 +2,9 @@
   "name": "justwatch-api",
   "repository": {
     "type": "git",
-    "url": "https://github.com/lufinkey/node-justwatch-api"
+    "url": "https://github.com/jorenn92/node-justwatch-api"
   },
-  "version": "1.0.7",
+  "version": "1.0.8",
   "description": "access the justwatch.com API",
   "main": "index.js",
   "scripts": {

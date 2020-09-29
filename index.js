@@ -1,159 +1,184 @@
-
+"use strict";
 const https = require('https');
 const QueryString = require('querystring');
-
 const API_DOMAIN = 'apis.justwatch.com';
 
-class JustWatch {
-	constructor(options) {
-		this._options = Object.assign({locale:'en_US'}, options);
-	}
+var JustWatch = {};
 
-	request(method, endpoint, params) {
-		return new Promise((resolve, reject) => {
-			params = Object.assign({}, params);
-			// build request data
-			const reqData = {
-				protocol: 'https:',
-				hostname: API_DOMAIN,
-				path: '/content' + endpoint,
-				method: method,
-				headers: {}
-			};
-			let body = null;
-			// add query string if necessary
-			if(method==='GET') {
-				if(Object.keys(params) > 0) {
-					reqData.path = reqData.path+'?'+QueryString.stringify(params);
-				}
-			}
-			else {
-				body = JSON.stringify(params);
-				reqData.headers['Content-Type'] = 'application/json';
-			}
+JustWatch._options = Object.assign({locale:'en_US'});
+this._options = Object.assign({locale:'en_US'});
 
-			// send request
-			const req = https.request(reqData, (res) => {
-				// build response
-				let buffers = [];
-				res.on('data', (chunk) => {
-					buffers.push(chunk);
-				});
+function request(method, endpoint, params) {
+    return new Promise((resolve, reject) => {
+        params = Object.assign({}, params);
+        // build request data
+        const reqData = {
+            protocol: 'https:',
+            hostname: API_DOMAIN,
+            path: '/content' + endpoint,
+            method: method,
+            headers: {}
+        };
+        let body = null;
+        // add query string if necessary
+        if(method==='GET') {
+            if(Object.keys(params) > 0) {
+                reqData.path = reqData.path+'?'+QueryString.stringify(params);
+            }
+        }
+        else {
+            body = JSON.stringify(params);
+            reqData.headers['Content-Type'] = 'application/json';
+        }
 
-				res.on('end', () => {
-					// check if response 
-					let output = null;
-					try {
-						output = Buffer.concat(buffers);
-						output = output.toString();
-						output = JSON.parse(output);
-					}
-					catch(error) {
-						if(res.statusCode !== 200) {
-							reject(new Error("request failed with status "+res.statusCode+": "+res.statusMessage));
-						}
-						else {
-							reject(error);
-						}
-						return;
-					}
-					
-					if(output.error) {
-						reject(new Error(output.error));
-					}
-					else {
-						resolve(output);
-					}
-				});
-			});
+        // send request
+        const req = https.request(reqData, (res) => {
+            // build response
+            let buffers = [];
+            res.on('data', (chunk) => {
+                buffers.push(chunk);
+            });
 
-			// handle error
-			req.on('error', (error) => {
-				reject(error);
-			});
+            res.on('end', () => {
+                // check if response
+                let output = null;
+                try {
+                    output = Buffer.concat(buffers);
+                    output = output.toString();
+                    output = JSON.parse(output);
+                }
+                catch(error) {
+                    if(res.statusCode !== 200) {
+                        reject(new Error("request failed with status "+res.statusCode+": "+res.statusMessage));
+                    }
+                    else {
+                        reject(error);
+                    }
+                    return;
+                }
 
-			// send
-			if(method !== 'GET' && body) {
-				req.write(body);
-			}
-			req.end();
-		});
-	}
+                if(output.error) {
+                    reject(new Error(output.error));
+                }
+                else {
+                    resolve(output);
+                }
+            });
+        });
 
-	async search(options={}) {
-		if(typeof options === 'string') {
-			options = {query: options};
-		}
-		else {
-			options = Object.assign({}, options);
-		}
-		// build default params
-		const params = {
-			'content_types': null,
-			'presentation_types': null,
-			'providers': null,
-			'genres': null,
-			'languages': null,
-			'release_year_from': null,
-			'release_year_until': null,
-			'monetization_types': null,
-			'min_price': null,
-			'max_price': null,
-			'scoring_filter_types': null,
-			'cinema_release': null,
-			'query': null,
-			'page': null,
-			'page_size': null
-		};
-		const paramKeys = Object.keys(params);
-		// validate options
-		for(const key in options) {
-			if(paramKeys.indexOf(key) === -1) {
-				throw new Error("invalid option '"+key+"'");
-			}
-			else {
-				params[key] = options[key];
-			}
-		}
-		// send request
-		const locale = encodeURIComponent(this._options.locale);
-		return await this.request('POST', '/titles/'+locale+'/popular', params);
-	}
+        // handle error
+        req.on('error', (error) => {
+            reject(error);
+        });
 
-	async getProviders() {
-		const locale = encodeURIComponent(this._options.locale);
-		return await this.request('GET', '/providers/locale/'+locale);
-	}
+        // send
+        if(method !== 'GET' && body) {
+            req.write(body);
+        }
+        req.end();
+    });
+}
 
-	async getGenres() {
-		const locale = encodeURIComponent(this._options.locale);
-		return await this.request('GET', '/genres/locale/'+locale);
-	}
+JustWatch.search = async function search(options={}) {
+    if(typeof options === 'string') {
+        options = {query: options};
+    }
+    else {
+        options = Object.assign({}, options);
+    }
+    // build default params
+    const params = {
+        'age_certifications':null,
+        'content_types': null,
+        'presentation_types': null,
+        'providers': null,
+        'genres': null,
+        'languages': null,
+        'release_year_from': null,
+        'release_year_until': null,
+        'monetization_types': null,
+        'min_price': null,
+        'max_price': null,
+        'nationwide_cinema_releases_only':null,
+        'scoring_filter_types': null,
+        'cinema_release': null,
+        'query': null,
+        'page': null,
+        'page_size': null,
+        'timeline_type':null,
+        'person_id':null
+    };
+    const paramKeys = Object.keys(params);
+    // validate options
+    for(const key in options) {
+        if(paramKeys.indexOf(key) === -1) {
+            throw new Error("invalid option '"+key+"'");
+        }
+        else {
+            params[key] = options[key];
+        }
+    }
+    // send request
+    const locale = encodeURIComponent(this._options.locale);
+    return await request('POST', '/titles/'+locale+'/popular', params);
+}
 
-	async getSeason(season_id) {
-		season_id = encodeURIComponent(season_id);
-		const locale = encodeURIComponent(this._options.locale);
-		return await this.request('GET', '/titles/show_season/' + season_id + '/locale/' + locale);
-	}
+JustWatch.getProviders = async function getProviders() {
+    const locale = encodeURIComponent(this._options.locale);
+    return await request('GET', '/providers/locale/'+locale);
+}
 
-	async getEpisodes(show_id) {
-		show_id = encodeURIComponent(show_id);
-		const locale = encodeURIComponent(this._options.locale);
-		return await this.request('GET', '/titles/show/'+show_id+'/locale/'+locale+'/newest_episodes');
-	}
+JustWatch.getGenres = async function getGenres() {
+    const locale = encodeURIComponent(this._options.locale);
+    return await request('GET', '/genres/locale/'+locale);
+}
 
-	async getTitle(content_type, title_id) {
-		title_id = encodeURIComponent(title_id);
-		content_type = encodeURIComponent(content_type);
-		const locale = encodeURIComponent(this._options.locale);
-		return await this.request('GET', '/titles/'+content_type+'/'+title_id+'/locale/'+locale);
-	}
+JustWatch.getTitle = async function getTile(title_id, content_type){
+    const locale = encodeURIComponent(this._options.locale);
+    return await request('GET', '/titles/' + content_type + '/' + title_id + '/locale/' + locale);
+}
 
-	async getPerson(person_id) {
-		person_id = encodeURIComponent(person_id);
-		const locale = encodeURIComponent(this._options.locale);
-		return await this.request('GET', '/titles/person/'+person_id+'/locale/'+locale);
-	}
+JustWatch.searchTitleID = async function searchTitleID(query){
+    results = [];
+
+    for(let result in this.search(query)){
+        results.push({id: result.id, title: result.title});
+    }
+
+    return results;
+}
+
+JustWatch.getSeason = async function getSeason(season_id) {
+    season_id = encodeURIComponent(season_id);
+    const locale = encodeURIComponent(this._options.locale);
+    return await request('GET', '/titles/show_season/' + season_id + '/locale/' + locale);
+}
+
+JustWatch.getEpisodes = async function getEpisodes(show_id) {
+    show_id = encodeURIComponent(show_id);
+    const locale = encodeURIComponent(this._options.locale);
+    return await request('GET', '/titles/show/'+show_id+'/locale/'+locale+'/newest_episodes');
+}
+
+JustWatch.getTitle = async function getTitle(content_type, title_id) {
+    title_id = encodeURIComponent(title_id);
+    content_type = encodeURIComponent(content_type);
+    const locale = encodeURIComponent(this._options.locale);
+    return await request('GET', '/titles/'+content_type+'/'+title_id+'/locale/'+locale);
+}
+
+JustWatch.getPerson = async function getPerson(person_id) {
+    person_id = encodeURIComponent(person_id);
+    const locale = encodeURIComponent(this._options.locale);
+    return await request('GET', '/titles/person/'+person_id+'/locale/'+locale);
+}
+
+JustWatch.getCertification = async function getCertification(content_type, country){
+    const params = {
+        'country': country,
+        'object_type': content_type
+    }
+    return await request('GET', '/age_certifications', params);
 }
 
 module.exports = JustWatch;
